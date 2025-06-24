@@ -475,6 +475,59 @@ def get_org_message_for_teams(event_details, event_type, affected_org_accounts, 
     print("Message sent to Teams: ", message)
 
 
+def get_message_for_chatbot(event_details, event_type, affected_accounts, affected_entities):
+    # TODO: Implement AWS Chatbot integration when not using Organizations
+    raise Exception("AWS Chatbot integration is supported only when deployed with Organizations enabled.")
+
+
+def get_org_message_for_chatbot(event_details, event_type, affected_org_accounts, affected_org_entities):
+    message = ""
+    if len(affected_org_entities) >= 1:
+        affected_org_entities = "\n".join(affected_org_entities)
+    else:
+        affected_org_entities = "All resources in region"
+    if len(affected_org_accounts) >= 1:
+        affected_org_accounts = "\n".join(affected_org_accounts)
+    else:
+        affected_org_accounts = "All accounts in region"
+
+    if event_type == "create":
+        title = "&#x1F6A8; [NEW] AWS Health reported an issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region."
+
+    elif event_type == "resolve":
+        title = "&#x2705; [RESOLVED] The AWS Health issue with the " + event_details['successfulSet'][0]['event'][
+            'service'].upper() + " service in the " + event_details['successfulSet'][0]['event'][
+                    'region'].upper() + " region is now resolved."
+    else:
+        print("Unsupported event type for AWS Chatbot: ", event_type)
+        return message
+    message = {
+        "version": "1.0",
+        "source": "custom",
+        "id": event_details['successfulSet'][0]['event']['arn'],
+        # "summary": "AWS Health Aware Alert",
+        "content": {
+                "textType": "client-markdown",
+                "title": title,
+                "description": str(
+                    {"name": "Account(s)", "value": affected_org_accounts},
+                    {"name": "Resource(s)", "value": affected_org_entities},
+                    {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
+                    {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
+                    {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
+                    {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))},
+                    {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
+                    {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
+                    {"name": "Updates", "value": event_details['successfulSet'][0]['eventDescription']['latestDescription']}
+                ),
+            }
+    }
+    print("Message sent to Teams: ", message)
+    return message
+
+
 def get_message_for_email(event_details, event_type, affected_accounts, affected_entities):
     # Not srue why we have the new line in the affected entities code here
     if len(affected_entities) >= 1:

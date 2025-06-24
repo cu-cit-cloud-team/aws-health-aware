@@ -189,6 +189,7 @@ def send_org_alert(
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
+    CHATBOT_SNS_ARN = os.getenv("CHATBOT_SNS_ARN", None)
     SENDER = os.environ["FROM_EMAIL"]
     RECIPIENT = os.environ["TO_EMAIL"]
     event_bus_name = get_secrets()["eventbusname"]
@@ -248,6 +249,20 @@ def send_org_alert(
             )
         except HTTPError as e:
             print("Got an error while sending message to Teams: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+    if CHATBOT_SNS_ARN:
+        try:
+            print("Sending the alert to Chatbot SNS Topic")
+            send_to_chatbot(
+                get_org_message_for_slack(
+                    event_details, event_type, affected_org_accounts, resources
+                ),
+                CHATBOT_SNS_ARN,
+            )
+        except HTTPError as e:
+            print("Got an error while sending message to Chatbot SNS: ", e.code, e.reason)
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
@@ -324,6 +339,21 @@ def send_to_teams(message, webhookurl):
     except URLError as e:
         print("Server connection failed: ", e.reason, e.reason)
 
+def send_to_chatbot(message, sns_arn):
+    """
+    Sends a message to an SNS topic for AWS Chatbot.
+    """
+    AWS_REGION = os.environ["AWS_REGION"]
+    client = aws_api.client("sns", AWS_REGION)
+    try:
+        response = client.publish(
+            TopicArn=sns_arn,
+            Message=json.dumps(message),
+            Subject="AHA Alert",
+        )
+        print("Message sent to SNS topic:", response)
+    except ClientError as e:
+        print("Failed to send message to SNS topic:", e.response["Error"]["Message"])
 
 def send_email(event_details, eventType, affected_accounts, affected_entities):
     SENDER = os.environ["FROM_EMAIL"]

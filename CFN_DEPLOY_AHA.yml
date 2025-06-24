@@ -53,6 +53,8 @@ Metadata:
         default: Microsoft Teams Webhook URL
       AmazonChimeWebhookURL:
         default: Amazon Chime Webhook URL
+      AWSChatbotSNSArn:
+        default: ARN of the SNS topic linked to AWS Chatbot
       FromEmail:
         default: Email From
       ToEmail:
@@ -68,6 +70,7 @@ Metadata:
       AccountIDs:
         default: Exclude any account numbers?        
 Conditions:
+  UsingChatbot: !Not [!Equals [!Ref AWSChatbotSNSArn, None]]
   UsingSlack: !Not [!Equals [!Ref SlackWebhookURL, None]]
   UsingTeams: !Not [!Equals [!Ref MicrosoftTeamsWebhookURL, None]]
   UsingChime: !Not [!Equals [!Ref AmazonChimeWebhookURL, None]]
@@ -77,6 +80,7 @@ Conditions:
   NotUsingMultiRegion: !Equals [!Ref SecondaryRegion, 'No']
   UsingMultiRegion: !Not [!Equals [!Ref SecondaryRegion, 'No']]
   TestCondition: !Equals ['true', 'false']
+  UsingMultiRegionChatbot: !And [!Condition UsingChatbot, !Condition UsingMultiRegion]
   UsingMultiRegionTeams: !And [!Condition UsingTeams, !Condition UsingMultiRegion]
   UsingMultiRegionSlack: !And [!Condition UsingSlack, !Condition UsingMultiRegion]
   UsingMultiRegionEventBridge: !And [!Condition UsingEventBridge, !Condition UsingMultiRegion]
@@ -165,6 +169,11 @@ Parameters:
     Description: >-
       Enter the Chime Webhook URL, If you don't prefer to use Amazon Chime,
       leave the default (None).   
+    Type: String
+    Default: None
+  AWSChatbotSNSArn:
+    Description: >-
+      Enter the ARN of the SNS topic linked to the AWS Chatbot. If you don't prefer to use AWS Chatbot, leave the default (None).
     Type: String
     Default: None
   Regions:
@@ -544,6 +553,14 @@ Resources:
                     - sts:AssumeRole
                   Resource: !Ref ManagementAccountRoleArn
                 - !Ref 'AWS::NoValue'                
+              - Fn::If:
+                - UsingChatbot
+                - Effect: Allow
+                  Action:
+                    - sns:Publish
+                  Resource:
+                    Ref: AWSChatbotSNSArn
+                - Ref: 'AWS::NoValue'
   LambdaSchedule:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -661,6 +678,9 @@ Resources:
           Teams: !If [UsingTeams, "True", !Ref 'AWS::NoValue']
           Chime: !If [UsingChime, "True", !Ref 'AWS::NoValue']
           Eventbridge: !If [UsingEventBridge, "True", !Ref 'AWS::NoValue']
+          Chatbot: !If [UsingChatbot, "True", !Ref 'AWS::NoValue']
+          CHATBOT_SNS_ARN:
+            !If [UsingChatbot, !Ref AWSChatbotSNSArn, !Ref 'AWS::NoValue']
           ACCOUNT_IDS:
             Ref: AccountIDs        
           REGIONS:
