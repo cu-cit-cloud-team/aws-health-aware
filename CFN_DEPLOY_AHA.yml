@@ -22,6 +22,7 @@ Metadata:
           - MicrosoftTeamsWebhookURL
           - AmazonChimeWebhookURL
           - EventBusName
+          - AWSChatbotSNSArn
       - Label:
           default: Email Setup - For Alerting via Email
         Parameters:
@@ -678,7 +679,6 @@ Resources:
           Teams: !If [UsingTeams, "True", !Ref 'AWS::NoValue']
           Chime: !If [UsingChime, "True", !Ref 'AWS::NoValue']
           Eventbridge: !If [UsingEventBridge, "True", !Ref 'AWS::NoValue']
-          Chatbot: !If [UsingChatbot, "True", !Ref 'AWS::NoValue']
           CHATBOT_SNS_ARN:
             !If [UsingChatbot, !Ref AWSChatbotSNSArn, !Ref 'AWS::NoValue']
           ACCOUNT_IDS:

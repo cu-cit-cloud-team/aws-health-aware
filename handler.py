@@ -11,6 +11,8 @@ from urllib.request import Request, urlopen, URLError, HTTPError
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from messagegenerator import (
+    get_org_message_for_chatbot,
+    get_message_for_chatbot,
     get_message_for_slack,
     get_org_message_for_slack,
     get_message_for_chime,
@@ -95,6 +97,7 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
     slack_url = get_secrets()["slack"]
     teams_url = get_secrets()["teams"]
     chime_url = get_secrets()["chime"]
+    CHATBOT_SNS_ARN = os.getenv("CHATBOT_SNS_ARN", None)
     SENDER = os.environ["FROM_EMAIL"]
     RECIPIENT = os.environ["TO_EMAIL"]
     event_bus_name = get_secrets()["eventbusname"]
@@ -154,6 +157,20 @@ def send_alert(event_details, affected_accounts, affected_entities, event_type):
             )
         except HTTPError as e:
             print("Got an error while sending message to Teams: ", e.code, e.reason)
+        except URLError as e:
+            print("Server connection failed: ", e.reason)
+            pass
+    if CHATBOT_SNS_ARN:
+        try:
+            print("Sending the alert to Chatbot SNS Topic")
+            send_to_chatbot(
+                get_message_for_chatbot(
+                    event_details, event_type, affected_accounts, resources
+                ),
+                CHATBOT_SNS_ARN,
+            )
+        except HTTPError as e:
+            print("Got an error while sending message to Chatbot SNS: ", e.code, e.reason)
         except URLError as e:
             print("Server connection failed: ", e.reason)
             pass
@@ -220,7 +237,7 @@ def send_org_alert(
                 print("Sending the alert to Slack Webhook Channel")
                 try:
                     send_to_slack(
-                        get_message_for_slack(
+                        get_org_message_for_slack(
                             event_details,
                             event_type,
                             affected_org_accounts,
@@ -256,7 +273,7 @@ def send_org_alert(
         try:
             print("Sending the alert to Chatbot SNS Topic")
             send_to_chatbot(
-                get_org_message_for_slack(
+                get_org_message_for_chatbot(
                     event_details, event_type, affected_org_accounts, resources
                 ),
                 CHATBOT_SNS_ARN,
