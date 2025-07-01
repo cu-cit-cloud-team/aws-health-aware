@@ -512,15 +512,15 @@ def get_org_message_for_chatbot(event_details, event_type, affected_org_accounts
                 "textType": "client-markdown",
                 "title": title,
                 "description": str(
-                    {"name": "Account(s)", "value": affected_org_accounts},
-                    {"name": "Resource(s)", "value": affected_org_entities},
-                    {"name": "Service", "value": event_details['successfulSet'][0]['event']['service']},
-                    {"name": "Region", "value": event_details['successfulSet'][0]['event']['region']},
-                    {"name": "Start Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event']['startTime'])},
-                    {"name": "End Time (UTC)", "value": cleanup_time(event_details['successfulSet'][0]['event'].get('endTime'))},
-                    {"name": "Status", "value": event_details['successfulSet'][0]['event']['statusCode']},
-                    {"name": "Event ARN", "value": event_details['successfulSet'][0]['event']['arn']},
-                    {"name": "Updates", "value": event_details['successfulSet'][0]['eventDescription']['latestDescription']}
+                    "Account(s): " + affected_org_accounts + "\n\n"
+                    "Resource(s): " + affected_org_entities + "\n\n"
+                    "Service: " + event_details['successfulSet'][0]['event']['service'] + "\n\n"
+                    "Region: " + event_details['successfulSet'][0]['event']['region'] + "\n\n"
+                    "Start Time (UTC): " + cleanup_time(event_details['successfulSet'][0]['event']['startTime']) + "\n\n"
+                    "End Time (UTC): " + cleanup_time(event_details['successfulSet'][0]['event'].get('endTime')) + "\n\n"
+                    "Status: " + event_details['successfulSet'][0]['event']['statusCode'] + "\n\n"
+                    "Event ARN: " + event_details['successfulSet'][0]['event']['arn'] + "\n\n"
+                    "Updates: " + event_details['successfulSet'][0]['eventDescription']['latestDescription'] + "\n\n"
                 ),
             }
     }
