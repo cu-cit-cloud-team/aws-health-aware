@@ -71,9 +71,10 @@ print("current health region: ", health_active_region)
 config = Config(
     region_name=health_active_region,
     retries=dict(
-        max_attempts=10  # org view apis have a lower tps than the single
+        max_attempts=10,  # org view apis have a lower tps than the single
         # account apis so we need to use larger
         # backoff/retry values than than the boto defaults
+        mode='adaptive'
     ),
 )
 
